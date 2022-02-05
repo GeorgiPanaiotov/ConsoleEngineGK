@@ -4,8 +4,6 @@
 
 
 
-
-
 class ConsoleEngineGK
 {
 private:
@@ -13,7 +11,7 @@ private:
 	int consoleHeight;
 	CHAR_INFO* screenBuffer;
 	HANDLE consoleHandle;
-	std::wstring appName;
+	std::string appName;
 	SMALL_RECT rectWnd;
 
 
@@ -24,7 +22,9 @@ public:
 		consoleHeight = 40;
 		rectWnd = { 0, 0, (short)consoleWidth, (short)consoleHeight };
 		consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
-		appName = L"Default";
+		appName = "Default";
+		SetAppName(appName);
+
 	};
 
 	enum COLORS
@@ -88,7 +88,7 @@ public:
 			screenBuffer[y * consoleWidth + x + i].Char.UnicodeChar = c[i];
 			screenBuffer[y * consoleWidth + x + i].Attributes = color;
 		}
-		Draw();
+		//Draw();
 	}
 
 	void FillColor(short col)
@@ -98,7 +98,7 @@ public:
 			screenBuffer[i].Char.UnicodeChar = 0x2591;
 			screenBuffer[i].Attributes = col;
 		}
-		Draw();
+		//Draw();
 	};
 
 	void DrawRect(int x, int y, int endX, int endY, short color = 0x000F)
@@ -112,7 +112,7 @@ public:
 		{
 			for (int j = 0; j < consoleWidth * consoleHeight; j++)
 			{
-				if(currentX == endX)
+				if (currentX == endX)
 				{
 					currentX = x;
 					break;
@@ -132,7 +132,56 @@ public:
 			tempTopY++;
 		};
 
-		Draw();
+		//Draw();
+	};
+
+	void DrawLine(int x, int y, int endX, int endY, short color = 0x000F)
+	{
+		if (y == endY)
+		{
+			int tempX = y * consoleWidth + x;
+			for (int i = 0; i < consoleWidth * consoleHeight; i++)
+			{
+				if (tempX < y * consoleWidth + endX)
+				{
+					screenBuffer[tempX].Char.UnicodeChar = 0x2591;
+					screenBuffer[tempX].Attributes = color;
+					tempX++;
+				}
+				else
+				{
+					break;
+				}
+			}
+			//Draw();
+		}
+
+		if (x == endX)
+		{
+			int currentY = y;
+			int currentX = x;
+			int tempY = currentY * consoleWidth + x;
+
+			for (int i = 0; i < consoleWidth * consoleHeight; i++)
+			{
+				if (currentY == endY)
+				{
+					break;
+				}
+				if (tempY < endY * consoleWidth + x)
+				{
+					screenBuffer[tempY].Char.UnicodeChar = 0x2591;
+					screenBuffer[tempY].Attributes = color;
+					currentY++;
+				}
+				tempY = currentY * consoleWidth + x;
+			}
+			//Draw();
+		}
+	};
+	void Draw()
+	{
+		WriteConsoleOutput(consoleHandle, screenBuffer, { (short)consoleWidth, (short)consoleHeight }, { 0,0 }, &rectWnd);
 	};
 
 	void SetAppName(std::string appName)
@@ -146,11 +195,21 @@ public:
 		SetConsoleTitle(convAppName);
 	};
 
+	int GetHeight()
+	{
+		return consoleHeight;
+	};
+
+	int GetWidth()
+	{
+		return consoleWidth;
+	}
+
 
 
 protected:
-	void Draw()
+	/*void Draw()
 	{
 		WriteConsoleOutput(consoleHandle, screenBuffer, { (short)consoleWidth, (short)consoleHeight }, { 0,0 }, &rectWnd);
-	};
+	};*/
 };
