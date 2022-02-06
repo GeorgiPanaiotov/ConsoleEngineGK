@@ -1,7 +1,8 @@
 #pragma once
 #include <Windows.h>
 #include <string>
-
+#include <chrono>
+#include <thread>
 
 
 class ConsoleEngineGK
@@ -11,8 +12,14 @@ private:
 	int consoleHeight;
 	CHAR_INFO* screenBuffer;
 	HANDLE consoleHandle;
+	HANDLE consoleInputHandle;
 	std::string appName;
 	SMALL_RECT rectWnd;
+
+	int mousePositionX;
+	int mousePositionY;
+
+	bool shouldLoop;
 
 
 public:
@@ -22,8 +29,10 @@ public:
 		consoleHeight = 40;
 		rectWnd = { 0, 0, (short)consoleWidth, (short)consoleHeight };
 		consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+		consoleInputHandle = GetStdHandle(STD_INPUT_HANDLE);
 		appName = "Default";
 		SetAppName(appName);
+		shouldLoop = false;
 
 	};
 
@@ -76,6 +85,8 @@ public:
 
 		rectWnd = { 0, 0, (short)consoleWidth - 1, (short)consoleHeight - 1 };
 		SetConsoleWindowInfo(consoleHandle, TRUE, &rectWnd);
+
+		SetConsoleMode(consoleInputHandle, ENABLE_EXTENDED_FLAGS | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT);
 
 		screenBuffer = new CHAR_INFO[consoleWidth * consoleHeight];
 		memset(screenBuffer, 0, sizeof(CHAR_INFO) * consoleWidth * consoleHeight);
@@ -179,6 +190,7 @@ public:
 			//Draw();
 		}
 	};
+
 	void Draw()
 	{
 		WriteConsoleOutput(consoleHandle, screenBuffer, { (short)consoleWidth, (short)consoleHeight }, { 0,0 }, &rectWnd);
@@ -205,11 +217,74 @@ public:
 		return consoleWidth;
 	}
 
-
-
-protected:
-	/*void Draw()
+	int GetMouseX()
 	{
-		WriteConsoleOutput(consoleHandle, screenBuffer, { (short)consoleWidth, (short)consoleHeight }, { 0,0 }, &rectWnd);
-	};*/
+		return mousePositionX;
+	};
+
+	int GetMouseY()
+	{
+		return mousePositionY;
+	};
+
+	void FreeDraw(short color)
+	{
+		shouldLoop = true;
+		while (shouldLoop)
+		{
+
+			while (shouldLoop)
+			{
+				INPUT_RECORD inputBuffer[32];
+				DWORD events = 0;
+				GetNumberOfConsoleInputEvents(consoleInputHandle, &events);
+
+				if (events > 0)
+				{
+					ReadConsoleInput(consoleInputHandle, inputBuffer, events, &events);
+				}
+
+				for (DWORD i = 0; i < events; i++)
+				{
+					switch (inputBuffer[i].EventType)
+					{
+					case MOUSE_EVENT:
+					{
+
+						switch (inputBuffer[i].Event.MouseEvent.dwEventFlags)
+						{
+						case MOUSE_MOVED:
+						{
+							switch (inputBuffer[i].Event.MouseEvent.dwButtonState)
+							{
+							case RI_MOUSE_BUTTON_1_DOWN:
+							{
+
+								mousePositionX = inputBuffer[i].Event.MouseEvent.dwMousePosition.X;
+								mousePositionY = inputBuffer[i].Event.MouseEvent.dwMousePosition.Y;
+								screenBuffer[mousePositionY * consoleWidth + mousePositionX].Char.UnicodeChar = 0x2591;
+								screenBuffer[mousePositionY * consoleWidth + mousePositionX].Attributes = color;
+							}
+							}
+						}
+						default:
+							break;
+
+						}
+					}
+					default:
+						break;
+					}
+				}
+
+				if (GetAsyncKeyState(VK_ESCAPE))
+				{
+					shouldLoop = false;
+				}
+
+				Draw();
+			}
+		}
+	}
+
 };
