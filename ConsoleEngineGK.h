@@ -227,6 +227,11 @@ public:
 		return mousePositionY;
 	};
 
+	void ClearConsole()
+	{
+		memset(screenBuffer, 0, sizeof(CHAR_INFO) * consoleWidth * consoleHeight);
+	};
+
 	void FreeDraw(short color)
 	{
 		shouldLoop = true;
@@ -255,16 +260,18 @@ public:
 						{
 						case MOUSE_MOVED:
 						{
-							switch (inputBuffer[i].Event.MouseEvent.dwButtonState)
-							{
-							case RI_MOUSE_BUTTON_1_DOWN:
-							{
+							mousePositionX = inputBuffer[i].Event.MouseEvent.dwMousePosition.X;
+							mousePositionY = inputBuffer[i].Event.MouseEvent.dwMousePosition.Y;
 
-								mousePositionX = inputBuffer[i].Event.MouseEvent.dwMousePosition.X;
-								mousePositionY = inputBuffer[i].Event.MouseEvent.dwMousePosition.Y;
+							if (inputBuffer[i].Event.MouseEvent.dwButtonState == RI_MOUSE_LEFT_BUTTON_DOWN)
+							{
 								screenBuffer[mousePositionY * consoleWidth + mousePositionX].Char.UnicodeChar = 0x2591;
 								screenBuffer[mousePositionY * consoleWidth + mousePositionX].Attributes = color;
 							}
+							if (inputBuffer[i].Event.MouseEvent.dwButtonState == RI_MOUSE_RIGHT_BUTTON_DOWN)
+							{
+								screenBuffer[mousePositionY * consoleWidth + mousePositionX].Char.UnicodeChar = 0x2591;
+								screenBuffer[mousePositionY * consoleWidth + mousePositionX].Attributes = 0x0000;
 							}
 						}
 						default:
